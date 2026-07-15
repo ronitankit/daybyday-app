@@ -4,6 +4,15 @@ const nextConfig: NextConfig = {
   experimental: {
     // Opt in to partial prerendering for fast perceived performance
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
   // Security headers
   async headers() {
     return [
