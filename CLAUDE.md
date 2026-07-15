@@ -79,11 +79,7 @@ Get a personal access token from https://supabase.com/dashboard/account/tokens
 - GitHub repo connected to Vercel — every push to `main` auto-deploys
 
 ## Pending / known items
-- [ ] Rotate the Supabase personal access token used in this session (get a new one at https://supabase.com/dashboard/account/tokens)
-- [ ] Add production domain to Google OAuth client in Google Cloud Console:
-  - Authorised JavaScript origins: `https://daybyday-app.vercel.app`
-  - Authorised redirect URIs: `https://daybyday-app.vercel.app/auth/callback`
-- [ ] Test Google OAuth end-to-end on production (client was created but not fully verified)
+- Nothing outstanding. All features shipped and verified.
 
 ---
 
