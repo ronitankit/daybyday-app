@@ -4,6 +4,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/lib/query/provider'
 import { SyncProvider } from '@/features/sync/SyncProvider'
+import { ServiceWorkerRegistration } from '@/features/pwa/ServiceWorkerRegistration'
 import './globals.css'
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <QueryProvider>
             <SyncProvider />
+            <ServiceWorkerRegistration />
             {children}
             <Toaster
               position="top-center"
