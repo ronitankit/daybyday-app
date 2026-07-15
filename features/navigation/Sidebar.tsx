@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { NAV_ITEMS } from './nav-items'
+import { AvatarUpload } from '@/features/auth/AvatarUpload'
+import { useCurrentUser } from '@/features/auth/useCurrentUser'
 
 const ICONS = {
   sun: Sun,
@@ -18,6 +20,7 @@ const ICONS = {
 
 export function Sidebar() {
   const pathname = usePathname()
+  const currentUser = useCurrentUser()
 
   return (
     <aside
@@ -51,16 +54,41 @@ export function Sidebar() {
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
-              <Icon
-                className="h-4 w-4 shrink-0"
-                aria-hidden="true"
-                strokeWidth={active ? 2.5 : 2}
-              />
+              {icon === 'user' && currentUser ? (
+                <AvatarUpload
+                  userId={currentUser.id}
+                  avatarUrl={currentUser.avatarUrl}
+                  size="sm"
+                  readOnly
+                />
+              ) : (
+                <Icon
+                  className="h-4 w-4 shrink-0"
+                  aria-hidden="true"
+                  strokeWidth={active ? 2.5 : 2}
+                />
+              )}
               {label}
             </Link>
           )
         })}
       </nav>
+
+      {/* User info */}
+      {currentUser && (
+        <div className="px-4 py-3 border-t border-border flex items-center gap-3">
+          <AvatarUpload
+            userId={currentUser.id}
+            avatarUrl={currentUser.avatarUrl}
+            size="sm"
+            readOnly
+          />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{currentUser.fullName ?? 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+          </div>
+        </div>
+      )}
 
       {/* Add habit CTA */}
       <div className="p-3 border-t border-border">

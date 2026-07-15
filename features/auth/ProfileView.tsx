@@ -1,25 +1,21 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Moon, Sun, Monitor, User } from 'lucide-react'
+import { LogOut, Moon, Sun, Monitor } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils/cn'
+import { AvatarUpload } from './AvatarUpload'
+import { useCurrentUser } from './useCurrentUser'
 
 export function ProfileView() {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
-  const [user, setUser] = useState<{ email?: string; user_metadata?: Record<string, string> } | null>(null)
+  const user = useCurrentUser()
   const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    const supabase = getSupabaseBrowserClient()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    supabase.auth.getUser().then((res: any) => setUser(res?.data?.user ?? null))
-  }, [])
 
   const handleSignOut = async () => {
     setIsLoading(true)
@@ -42,14 +38,29 @@ export function ProfileView() {
       <Card>
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-7 w-7 text-primary" aria-hidden="true" />
-            </div>
+            {user ? (
+              <AvatarUpload
+                userId={user.id}
+                avatarUrl={user.avatarUrl}
+                size="lg"
+              />
+            ) : (
+              <AvatarUpload
+                userId=""
+                avatarUrl={null}
+                size="lg"
+                readOnly
+              />
+            )}
+
             <div>
               {user ? (
                 <>
-                  <p className="font-semibold">{user.user_metadata?.full_name ?? user.user_metadata?.name ?? 'User'}</p>
+                  <p className="font-semibold">{user.fullName ?? 'User'}</p>
                   <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Tap the photo to update it
+                  </p>
                 </>
               ) : (
                 <>

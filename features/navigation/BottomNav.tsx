@@ -7,11 +7,14 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { NAV_ITEMS } from './nav-items'
+import { AvatarUpload } from '@/features/auth/AvatarUpload'
+import { useCurrentUser } from '@/features/auth/useCurrentUser'
 
 const ICONS = { sun: Sun, calendar: Calendar, 'list-checks': ListChecks, 'bar-chart-2': BarChart2, user: User }
 
 export function BottomNav() {
   const pathname = usePathname()
+  const currentUser = useCurrentUser()
 
   return (
     <nav
@@ -22,6 +25,8 @@ export function BottomNav() {
       {NAV_ITEMS.map(({ href, label, icon }) => {
         const Icon = ICONS[icon as keyof typeof ICONS]
         const active = pathname.startsWith(href)
+        const isProfile = icon === 'user'
+
         return (
           <Link
             key={href}
@@ -36,11 +41,25 @@ export function BottomNav() {
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <Icon
-              className={cn('h-5 w-5 transition-transform', active && 'scale-110')}
-              aria-hidden="true"
-              strokeWidth={active ? 2.5 : 2}
-            />
+            {isProfile && currentUser ? (
+              <div className={cn(
+                'h-5 w-5 rounded-full overflow-hidden ring-2 transition-colors',
+                active ? 'ring-primary' : 'ring-transparent',
+              )}>
+                <AvatarUpload
+                  userId={currentUser.id}
+                  avatarUrl={currentUser.avatarUrl}
+                  size="sm"
+                  readOnly
+                />
+              </div>
+            ) : (
+              <Icon
+                className={cn('h-5 w-5 transition-transform', active && 'scale-110')}
+                aria-hidden="true"
+                strokeWidth={active ? 2.5 : 2}
+              />
+            )}
             <span>{label}</span>
           </Link>
         )
