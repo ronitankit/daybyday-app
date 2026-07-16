@@ -144,17 +144,32 @@ export function useUpdateHabit() {
   const supabase = getSupabaseBrowserClient()
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Habit> & { id: string }) => {
+    mutationFn: async ({
+      id,
+      schedule,
+      ...updates
+    }: Omit<Partial<Habit>, 'schedule'> & { id: string; schedule?: Partial<HabitSchedule> & { id: string } }) => {
       const { error } = await supabase
         .from('habits')
         .update(updates)
         .eq('id', id)
       if (error) throw error
+
+      if (schedule) {
+        const { id: scheduleId, ...scheduleUpdates } = schedule
+        const { error: scheduleError } = await supabase
+          .from('habit_schedules')
+          .update(scheduleUpdates)
+          .eq('id', scheduleId)
+        if (scheduleError) throw scheduleError
+      }
+
       return id
     },
     onSuccess: (id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.habits() })
       queryClient.invalidateQueries({ queryKey: queryKeys.habit(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.habitWithSchedule(id) })
     },
     onError: (err) => {
       toast.error(`Failed to update habit: ${err.message}`)

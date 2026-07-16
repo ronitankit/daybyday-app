@@ -7,6 +7,7 @@ import { queryKeys } from '@/lib/query/keys'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { useArchiveHabit } from './useHabits'
+import { HabitForm } from './HabitForm'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import type { Habit, HabitSchedule } from '@/types'
 
@@ -68,23 +69,7 @@ export function EditHabitView({ habitId }: EditHabitViewProps) {
         <h1 className="text-xl font-bold truncate">{habit.name}</h1>
       </div>
 
-      <div className="rounded-xl border bg-card p-5 space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-4 rounded-full" style={{ backgroundColor: habit.colour }} aria-hidden="true" />
-          <div>
-            <p className="font-semibold">{habit.name}</p>
-            <p className="text-sm text-muted-foreground capitalize">{habit.habit_type}</p>
-          </div>
-        </div>
-        {habit.description && (
-          <p className="text-sm text-muted-foreground">{habit.description}</p>
-        )}
-        {habit.target_value && (
-          <p className="text-sm">
-            Target: <span className="font-medium">{habit.target_value} {habit.unit ?? ''}</span>
-          </p>
-        )}
-      </div>
+      <HabitForm habit={habit} />
 
       {/* Danger zone */}
       <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5">

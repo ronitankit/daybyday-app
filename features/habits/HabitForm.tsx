@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useCreateHabit } from './useHabits'
+import { useCreateHabit, useUpdateHabit } from './useHabits'
 import { todayString } from '@/lib/utils/date'
-import type { HabitType, SuccessDirection } from '@/types'
+import type { Habit, HabitSchedule, HabitType, SuccessDirection } from '@/types'
 
 const DAYS = [
   { value: 1, label: 'Mon' },
@@ -54,10 +54,17 @@ const TYPE_DEFAULTS: Record<HabitType, Partial<FormValues>> = {
   limit: { target_value: 60, unit: '' },
 }
 
-export function CreateHabitForm() {
+interface HabitFormProps {
+  habit?: Habit & { schedule: HabitSchedule[] }
+}
+
+export function HabitForm({ habit }: HabitFormProps) {
   const router = useRouter()
   const createHabit = useCreateHabit()
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const updateHabit = useUpdateHabit()
+  const [showAdvanced, setShowAdvanced] = useState(!!habit?.description || !!habit?.notes)
+  const isEditing = !!habit
+  const existingSchedule = habit?.schedule?.[0]
 
   const {
     register,
@@ -69,7 +76,19 @@ export function CreateHabitForm() {
   } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
-    defaultValues: {
+    defaultValues: habit ? {
+      name: habit.name,
+      habit_type: habit.habit_type,
+      target_value: habit.target_value ?? undefined,
+      unit: habit.unit ?? undefined,
+      schedule_type: existingSchedule?.schedule_type ?? 'daily',
+      weekdays: existingSchedule?.weekdays ?? [1, 2, 3, 4, 5],
+      frequency_target: existingSchedule?.frequency_target ?? undefined,
+      cumulative_target: existingSchedule?.cumulative_target ?? undefined,
+      colour: habit.colour,
+      description: habit.description ?? undefined,
+      notes: habit.notes ?? undefined,
+    } : {
       habit_type: 'binary',
       schedule_type: 'daily',
       colour: '#6366f1',
@@ -99,6 +118,31 @@ export function CreateHabitForm() {
   const onSubmit = async (values: any) => {
     const successDirection: SuccessDirection =
       values.habit_type === 'limit' ? 'decrease' : 'increase'
+
+    if (isEditing && habit) {
+      await updateHabit.mutateAsync({
+        id: habit.id,
+        name: values.name,
+        description: values.description ?? null,
+        habit_type: values.habit_type,
+        target_value: values.habit_type === 'binary' ? null : values.target_value ?? null,
+        unit: values.habit_type === 'binary' || values.habit_type === 'duration' ? null : values.unit ?? null,
+        success_direction: successDirection,
+        colour: values.colour,
+        notes: values.notes ?? null,
+        ...(existingSchedule ? {
+          schedule: {
+            id: existingSchedule.id,
+            schedule_type: values.schedule_type,
+            weekdays: values.schedule_type === 'weekdays' ? values.weekdays : null,
+            frequency_target: values.schedule_type === 'weekly_frequency' ? values.frequency_target : null,
+            cumulative_target: values.schedule_type === 'weekly_cumulative' ? values.cumulative_target : null,
+          },
+        } : {}),
+      })
+      router.push(`/habits/${habit.id}`)
+      return
+    }
 
     await createHabit.mutateAsync({
       name: values.name,
@@ -309,8 +353,10 @@ export function CreateHabitForm() {
         >
           Cancel
         </Button>
-        <Button type="submit" className="flex-1" disabled={isSubmitting || createHabit.isPending}>
-          {isSubmitting || createHabit.isPending ? 'Creating...' : 'Create Habit'}
+        <Button type="submit" className="flex-1" disabled={isSubmitting || createHabit.isPending || updateHabit.isPending}>
+          {isEditing
+            ? (isSubmitting || updateHabit.isPending ? 'Saving...' : 'Save changes')
+            : (isSubmitting || createHabit.isPending ? 'Creating...' : 'Create Habit')}
         </Button>
       </div>
     </form>

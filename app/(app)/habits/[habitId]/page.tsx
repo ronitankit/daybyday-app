@@ -3,6 +3,7 @@ import { EditHabitView } from '@/features/habits/EditHabitView'
 
 export const metadata: Metadata = { title: 'Edit Habit' }
 
-export default function HabitDetailPage({ params }: { params: { habitId: string } }) {
-  return <EditHabitView habitId={params.habitId} />
+export default async function HabitDetailPage({ params }: { params: Promise<{ habitId: string }> }) {
+  const { habitId } = await params
+  return <EditHabitView habitId={habitId} />
 }
