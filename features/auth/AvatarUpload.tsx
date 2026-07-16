@@ -30,7 +30,11 @@ export function AvatarUpload({
   onUpload,
   className,
 }: AvatarUploadProps) {
-  const [url, setUrl] = useState(avatarUrl ?? null)
+  // Local override for the freshly uploaded image; falls back to the prop
+  // (the source of truth) so the avatar stays correct across re-renders,
+  // e.g. when it first resolves after login.
+  const [optimisticUrl, setOptimisticUrl] = useState<string | null>(null)
+  const url = optimisticUrl ?? avatarUrl ?? null
   const [uploading, setUploading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const s = SIZES[size]
@@ -59,7 +63,7 @@ export function AvatarUpload({
       const publicUrl = `${data.publicUrl}?t=${Date.now()}`
 
       await supabase.auth.updateUser({ data: { avatar_url: publicUrl } })
-      setUrl(publicUrl)
+      setOptimisticUrl(publicUrl)
       onUpload?.(publicUrl)
       toast.success('Profile picture updated')
     } catch {
