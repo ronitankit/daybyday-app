@@ -18,6 +18,7 @@ export const queryKeys = {
 
   // Habits
   habits: () => ['habits'] as const,
+  archivedHabits: () => ['habits', 'archived'] as const,
   habit: (id: string) => ['habits', id] as const,
   habitWithSchedule: (id: string) => ['habits', id, 'schedule'] as const,
 

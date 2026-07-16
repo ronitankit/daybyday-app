@@ -36,6 +36,35 @@ export function useHabits() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Fetch archived habits
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function fetchArchivedHabits() {
+  const supabase = getSupabaseBrowserClient()
+  const { data, error } = await supabase
+    .from('habits')
+    .select(`
+      *,
+      category:categories(id, name, colour, icon),
+      routine:routines(id, name, colour),
+      schedule:habit_schedules(*)
+    `)
+    .eq('status', 'archived')
+    .order('sort_order', { ascending: true })
+
+  if (error) throw error
+  return data as Array<Habit & { schedule: HabitSchedule[] }>
+}
+
+export function useArchivedHabits() {
+  return useQuery({
+    queryKey: queryKeys.archivedHabits(),
+    queryFn: fetchArchivedHabits,
+    staleTime: 30 * 1000,
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Create habit
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -151,7 +180,31 @@ export function useArchiveHabit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.habits() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.archivedHabits() })
       toast.success('Habit archived')
+    },
+  })
+}
+
+export function useUnarchiveHabit() {
+  const queryClient = useQueryClient()
+  const supabase = getSupabaseBrowserClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('habits')
+        .update({ status: 'active' })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.habits() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.archivedHabits() })
+      toast.success('Habit unarchived')
+    },
+    onError: (err) => {
+      toast.error(`Failed to unarchive habit: ${err.message}`)
     },
   })
 }

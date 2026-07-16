@@ -19,8 +19,8 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Plus, GripVertical, Archive, Pause, Play, PenLine } from 'lucide-react'
-import { useHabits, useReorderHabits, useUpdateHabit, useArchiveHabit } from './useHabits'
+import { Plus, GripVertical, Archive, ArchiveRestore, Pause, Play, PenLine } from 'lucide-react'
+import { useHabits, useArchivedHabits, useReorderHabits, useUpdateHabit, useArchiveHabit, useUnarchiveHabit } from './useHabits'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
@@ -28,16 +28,21 @@ import { cn } from '@/lib/utils/cn'
 import type { Habit } from '@/types'
 
 export function HabitListView() {
+  const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'archived'>('all')
+
   const { data: habits, isLoading } = useHabits()
+  const { data: archivedHabits, isLoading: isLoadingArchived } = useArchivedHabits()
   const reorder = useReorderHabits()
   const updateHabit = useUpdateHabit()
   const archiveHabit = useArchiveHabit()
-  const [filter, setFilter] = useState<'all' | 'active' | 'paused'>('all')
+  const unarchiveHabit = useUnarchiveHabit()
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  const isArchivedTab = filter === 'archived'
 
   const filteredHabits = habits?.filter(h => {
     if (filter === 'all') return true
@@ -68,7 +73,7 @@ export function HabitListView() {
 
       {/* Filter tabs */}
       <div className="flex gap-1 rounded-lg bg-muted p-1 w-fit" role="tablist" aria-label="Filter habits">
-        {(['all', 'active', 'paused'] as const).map(f => (
+        {(['all', 'active', 'paused', 'archived'] as const).map(f => (
           <button
             key={f}
             role="tab"
@@ -87,7 +92,28 @@ export function HabitListView() {
         ))}
       </div>
 
-      {isLoading ? (
+      {isArchivedTab ? (
+        isLoadingArchived ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          </div>
+        ) : !archivedHabits || archivedHabits.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16 text-center">
+            <p className="font-medium">No archived habits</p>
+            <p className="text-sm text-muted-foreground mt-1">Habits you archive will show up here.</p>
+          </div>
+        ) : (
+          <ul className="space-y-2" aria-label="Archived habit list">
+            {archivedHabits.map(habit => (
+              <ArchivedHabitRow
+                key={habit.id}
+                habit={habit}
+                onUnarchive={() => unarchiveHabit.mutate(habit.id)}
+              />
+            ))}
+          </ul>
+        )
+      ) : isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
         </div>
@@ -126,6 +152,45 @@ export function HabitListView() {
         </DndContext>
       )}
     </div>
+  )
+}
+
+function ArchivedHabitRow({
+  habit,
+  onUnarchive,
+}: {
+  habit: Habit
+  onUnarchive: () => void
+}) {
+  return (
+    <li className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
+      {/* Colour dot */}
+      <div
+        className="h-3 w-3 rounded-full shrink-0"
+        style={{ backgroundColor: habit.colour }}
+        aria-hidden="true"
+      />
+
+      {/* Name and meta */}
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm truncate">{habit.name}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs text-muted-foreground capitalize">{habit.habit_type}</span>
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0">Archived</Badge>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onUnarchive}
+        aria-label={`Unarchive ${habit.name}`}
+      >
+        <ArchiveRestore className="h-4 w-4" />
+        Unarchive
+      </Button>
+    </li>
   )
 }
 
