@@ -29,10 +29,21 @@ export function useCurrentUser(): CurrentUser | null {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     supabase.auth.getUser().then(({ data }: any) => setUser(fromSession(data.user)))
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_: any, session: any) => {
-      setUser(fromSession(session?.user ?? null))
-    })
+    // Re-fetch from the server on every auth transition rather than trusting
+    // session.user directly — right after sign-in that object can lag behind
+    // the latest user_metadata (e.g. a freshly uploaded avatar_url), which
+    // made the avatar disappear until the next reload.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (_: any, session: any) => {
+        if (!session?.user) {
+          setUser(null)
+          return
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        supabase.auth.getUser().then(({ data }: any) => setUser(fromSession(data.user)))
+      },
+    )
 
     return () => subscription.unsubscribe()
   }, [])

@@ -1,4 +1,4 @@
-const CACHE = 'daybyday-v1'
+const CACHE = 'daybyday-v2'
 const PRECACHE = ['/', '/today', '/offline.html']
 
 self.addEventListener('install', (e) => {
@@ -41,15 +41,15 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // Stale-while-revalidate for pages
+  // Network-first for pages — always serves the latest deploy when online,
+  // and only falls back to the cache (then the offline page) when offline.
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const network = fetch(e.request).then((res) => {
+    fetch(e.request)
+      .then((res) => {
         const clone = res.clone()
         caches.open(CACHE).then((c) => c.put(e.request, clone))
         return res
-      }).catch(() => caches.match('/offline.html'))
-      return cached ?? network
-    })
+      })
+      .catch(() => caches.match(e.request).then((cached) => cached ?? caches.match('/offline.html')))
   )
 })
